@@ -50,16 +50,16 @@
 
     <div id="toast" class="notification">Успешно!</div>
 
-    <!-- Модалка входа (Старый стиль) -->
+    <!-- Модалка входа -->
     <div id="admin-modal" class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 p-6">
         <div class="w-full max-w-md bg-zinc-950 border border-zinc-900 p-10">
             <h2 class="text-xs tracking-[0.5em] uppercase font-bold text-zinc-500 mb-8">Система</h2>
             <input type="password" id="admin-pass" placeholder="TOKEN" 
-                   onkeypress="if(event.key === 'Enter') attemptLogin()"
+                   onkeypress="if(event.key === 'Enter') window.attemptLogin()"
                    class="w-full bg-transparent border-b border-zinc-800 py-4 text-white focus:outline-none focus:border-white transition-colors mb-8 text-sm tracking-widest">
             <div class="flex gap-4">
-                <button onclick="attemptLogin()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">Войти</button>
-                <button onclick="toggleLogin(false)" class="flex-1 border border-zinc-800 text-zinc-500 py-4 text-[10px] font-black uppercase tracking-widest">Отмена</button>
+                <button onclick="window.attemptLogin()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">Войти</button>
+                <button onclick="window.toggleLogin(false)" class="flex-1 border border-zinc-800 text-zinc-500 py-4 text-[10px] font-black uppercase tracking-widest">Отмена</button>
             </div>
         </div>
     </div>
@@ -72,12 +72,12 @@
                 <input type="text" id="new-number" placeholder="НОМЕР" class="w-full bg-transparent border-b border-zinc-800 py-3 text-white focus:outline-none text-sm uppercase">
                 <input type="text" id="new-desc" placeholder="ОПИСАНИЕ" class="w-full bg-transparent border-b border-zinc-800 py-3 text-white focus:outline-none text-sm uppercase">
                 <div class="relative border-2 border-dashed border-zinc-800 p-8 text-center">
-                    <input type="file" id="new-photo" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewFile()">
+                    <input type="file" id="new-photo" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="window.previewFile()">
                     <p id="file-label" class="text-[10px] uppercase text-zinc-600 tracking-widest">Загрузить фото</p>
                 </div>
                 <div class="flex gap-4 pt-4">
-                    <button onclick="addNewAsset()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">Опубликовать</button>
-                    <button onclick="toggleUpload(false)" class="flex-1 border border-zinc-800 text-zinc-500 py-4 text-[10px] font-black uppercase tracking-widest">Назад</button>
+                    <button onclick="window.addNewAsset()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">Опубликовать</button>
+                    <button onclick="window.toggleUpload(false)" class="flex-1 border border-zinc-800 text-zinc-500 py-4 text-[10px] font-black uppercase tracking-widest">Назад</button>
                 </div>
             </div>
         </div>
@@ -94,20 +94,19 @@
         <div id="admin-actions" class="hidden mb-12 flex justify-between items-center border-b border-zinc-900 pb-8 gap-4">
             <div class="text-[9px] text-green-500 tracking-widest uppercase font-bold">Admin Online</div>
             <div class="flex gap-4">
-                <button onclick="toggleUpload(true)" class="bg-white text-black px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all">Добавить</button>
-                <button onclick="logout()" class="border border-red-900 text-red-500 px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-red-950 transition-all">Выход</button>
+                <button onclick="window.toggleUpload(true)" class="bg-white text-black px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all">Добавить</button>
+                <button onclick="window.logout()" class="border border-red-900 text-red-500 px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-red-950 transition-all">Выход</button>
             </div>
         </div>
         <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            <!-- Сюда прилетят данные из Firebase -->
+            <!-- Сюда прилетят данные -->
         </div>
     </main>
 
     <footer class="border-t border-zinc-900 py-12 px-6 flex flex-col items-center gap-6">
-        <button onclick="toggleLogin(true)" class="text-zinc-900 text-[8px] uppercase tracking-[0.4em] hover:text-zinc-700 transition-all">.</button>
+        <button onclick="window.toggleLogin(true)" class="text-zinc-900 text-[8px] uppercase tracking-[0.4em] hover:text-zinc-700 transition-all">.</button>
     </footer>
 
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, query, signInAnonymously, getAuth, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -119,12 +118,25 @@
         const auth = getFirebaseAuth(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'physim-vault';
 
-        // Оригинальный токен
         const SECRET_TOKEN = 'HDFNIPJDhoPJFDHiopjzh4z64hz6j74zf74jhzfg4jxfg74j656564864df4hdfhfgj4f5g4jfGSDFSDFGDFH5444555561488GITLERHG4';
         let items = [];
         let currentImageData = '';
 
-        // Авторизация
+        // UI Helpers
+        window.toggleLogin = (show) => { 
+            const modal = document.getElementById('admin-modal');
+            modal.style.display = show ? 'flex' : 'none'; 
+            if(show) document.getElementById('admin-pass').focus();
+        };
+        window.toggleUpload = (show) => { document.getElementById('upload-modal').style.display = show ? 'flex' : 'none'; };
+        window.showToast = (msg) => {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        };
+
+        // Auth
         const initAuth = async () => {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
@@ -141,7 +153,6 @@
             }
         });
 
-        // Слушаем облако
         function listenToData() {
             const dataRef = collection(db, 'artifacts', appId, 'public', 'data', 'cards');
             onSnapshot(dataRef, (snapshot) => {
@@ -151,7 +162,6 @@
             }, (err) => console.error(err));
         }
 
-        // Рендер
         window.render = function() {
             const grid = document.getElementById('grid');
             const adminMode = sessionStorage.getItem('physim_admin') === 'true';
@@ -177,31 +187,30 @@
             `).join('');
         };
 
-        // Действия админа
         window.attemptLogin = function() {
             const input = document.getElementById('admin-pass');
             const pass = input.value.trim();
             if (pass === SECRET_TOKEN) {
                 sessionStorage.setItem('physim_admin', 'true');
-                toggleLogin(false);
+                window.toggleLogin(false);
                 render();
-                showToast("Приветик <3");
+                window.showToast("Приветик <3");
                 input.value = '';
             } else {
-                showToast("Отклонено");
+                window.showToast("Отклонено");
             }
         };
 
         window.logout = function() {
             sessionStorage.removeItem('physim_admin');
             render();
-            showToast("Сессия завершена");
+            window.showToast("Сессия завершена");
         };
 
         window.addNewAsset = async function() {
             const num = document.getElementById('new-number').value;
             const desc = document.getElementById('new-desc').value;
-            if (!num || !currentImageData) return showToast("DATA MISSING");
+            if (!num || !currentImageData) return window.showToast("DATA MISSING");
 
             try {
                 const dataRef = collection(db, 'artifacts', appId, 'public', 'data', 'cards');
@@ -211,20 +220,20 @@
                     image: currentImageData,
                     createdAt: Date.now()
                 });
-                toggleUpload(false);
+                window.toggleUpload(false);
                 document.getElementById('new-number').value = '';
                 document.getElementById('new-desc').value = '';
                 currentImageData = '';
                 document.getElementById('file-label').innerText = "Загрузить фото";
-                showToast("Опубликовано для всех");
-            } catch (e) { showToast("Ошибка сети"); }
+                window.showToast("Опубликовано для всех");
+            } catch (e) { window.showToast("Ошибка сети"); }
         };
 
         window.removeItem = async function(id) {
             if (confirm("Удалить из облака навсегда?")) {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'cards', id);
                 await deleteDoc(docRef);
-                showToast("Удалено");
+                window.showToast("Удалено");
             }
         };
 
@@ -237,22 +246,6 @@
             }
             if (file) reader.readAsDataURL(file);
         };
-    </script>
-
-    <script>
-        // Глобальные функции UI
-        function toggleLogin(show) { 
-            const modal = document.getElementById('admin-modal');
-            modal.style.display = show ? 'flex' : 'none'; 
-            if(show) document.getElementById('admin-pass').focus();
-        }
-        function toggleUpload(show) { document.getElementById('upload-modal').style.display = show ? 'flex' : 'none'; }
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
     </script>
 </body>
 </html>
