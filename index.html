@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>physim</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            scroll-behavior: smooth;
+        }
+        .bw-card {
+            background: #050505;
+            border: 1px solid #1a1a1a;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bw-card:hover {
+            border-color: #444;
+            background: #0a0a0a;
+            transform: translateY(-4px);
+        }
+        .notification {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(200%);
+            background: #ffffff;
+            color: #000000;
+            padding: 1rem 2.5rem;
+            border-radius: 2px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 11px;
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 1000;
+        }
+        .notification.show { transform: translateX(-50%) translateY(0); }
+        .hero-gradient { background: radial-gradient(circle at center, #111 0%, #000 100%); }
+        
+        #admin-modal, #upload-modal {
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    
+    <div id="toast" class="notification">Успешно!</div>
+
+    <!-- Login Modal -->
+    <div id="admin-modal" class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 p-6">
+        <div class="w-full max-w-md bg-zinc-950 border border-zinc-900 p-10">
+            <h2 class="text-xs tracking-[0.5em] uppercase font-bold text-zinc-500 mb-8">Вход</h2>
+            <input type="password" id="admin-pass" placeholder="TOKEN" 
+                   class="w-full bg-transparent border-b border-zinc-800 py-4 text-white focus:outline-none focus:border-white transition-colors mb-8 text-sm tracking-widest">
+            <div class="flex gap-4">
+                <button onclick="attemptLogin()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">Login</button>
+                <button onclick="toggleLogin(false)" class="flex-1 border border-zinc-800 text-zinc-500 py-4 text-[10px] font-black uppercase tracking-widest">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div id="upload-modal" class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 p-6">
+        <div class="w-full max-w-md bg-zinc-950 border border-zinc-900 p-10">
+            <h2 class="text-xs tracking-[0.5em] uppercase font-bold text-zinc-500 mb-8">Добавление карточки</h2>
+            <div class="space-y-6">
+                <input type="text" id="new-number" placeholder="Номерок" class="w-full bg-transparent border-b border-zinc-800 py-3 text-white focus:outline-none text-sm">
+                <input type="text" id="new-desc" placeholder="Описание" class="w-full bg-transparent border-b border-zinc-800 py-3 text-white focus:outline-none text-sm">
+                
+                <div class="relative border-2 border-dashed border-zinc-800 p-8 text-center">
+                    <input type="file" id="new-photo" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewFile()">
+                    <p id="file-label" class="text-[10px] uppercase text-zinc-600 tracking-widest">Загрузи фото</p>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button onclick="addNewAsset()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">Save Asset</button>
+                    <button onclick="toggleUpload(false)" class="flex-1 border border-zinc-800 text-zinc-500 py-4 text-[10px] font-black uppercase tracking-widest">Back</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="hero-gradient border-b border-zinc-900 px-6 py-24">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="text-6xl font-black tracking-tighter uppercase mb-6">physim</h1>
+            <p class="text-zinc-500 text-[10px] tracking-[0.5em] uppercase font-bold">Анонимные номер и маленькая стоимость</p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-24 px-6">
+        <div id="admin-actions" class="hidden mb-12 flex flex-col md:flex-row justify-between items-center border-b border-zinc-900 pb-8 gap-4">
+            <div class="text-[10px] text-zinc-500 tracking-widest uppercase font-bold"></div>
+            <div class="flex gap-4">
+                <button onclick="downloadZIP()" class="border border-zinc-700 text-zinc-400 px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
+                    Экспорт ZIP
+                </button>
+                <button onclick="toggleUpload(true)" class="bg-white text-black px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all">
+                    Добавить карточку
+                </button>
+                <button onclick="logout()" class="border border-red-900 text-red-500 px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-red-950 transition-all">
+                    Выйти
+                </button>
+            </div>
+        </div>
+        <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"></div>
+    </main>
+
+    <footer class="border-t border-zinc-900 py-12 px-6 flex flex-col items-center gap-6">
+        <p class="text-zinc-600 text-[9px] uppercase tracking-[0.3em]">© physim system v2.0</p>
+        <button onclick="toggleLogin(true)" id="admin-entry-btn" class="text-zinc-900 text-[8px] uppercase tracking-[0.4em] hover:text-zinc-700 transition-all">.</button>
+    </footer>
+
+    <script>
+        const STORAGE_KEY = 'physim_vault_data';
+        const AUTH_KEY = 'physim_auth';
+        const SECRET_TOKEN = 'HDFNIPJDhoPJFDHiopjzh4z64hz6j74zf74jhzfg4jxfg74j656564864df4hdfhfgj4f5g4jfGSDFSDFGDFH5444555561488GITLERHG4'; 
+
+        let items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        let currentImageData = '';
+
+        function toggleLogin(show) { document.getElementById('admin-modal').style.display = show ? 'flex' : 'none'; }
+        function toggleUpload(show) { document.getElementById('upload-modal').style.display = show ? 'flex' : 'none'; }
+
+        function previewFile() {
+            const file = document.getElementById('new-photo').files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                currentImageData = reader.result;
+                document.getElementById('file-label').innerText = "PHOTO LOADED";
+            }
+            if (file) reader.readAsDataURL(file);
+        }
+
+        function attemptLogin() {
+            if (document.getElementById('admin-pass').value === SECRET_TOKEN) {
+                sessionStorage.setItem(AUTH_KEY, 'true');
+                toggleLogin(false);
+                render();
+                showToast("Приветик <3");
+            } else { showToast("Отклонено"); }
+        }
+
+        function logout() { sessionStorage.removeItem(AUTH_KEY); render(); }
+        function isAdmin() { return sessionStorage.getItem(AUTH_KEY) === 'true'; }
+
+        function addNewAsset() {
+            const num = document.getElementById('new-number').value;
+            const desc = document.getElementById('new-desc').value;
+            
+            if (!num || !currentImageData) return showToast("DATA MISSING");
+
+            const nextID = items.length > 0 ? Math.max(...items.map(i => i.photoID)) + 1 : 1;
+
+            items.unshift({
+                photoID: nextID,
+                fileName: `${nextID}.jpg`,
+                number: num,
+                description: desc.toUpperCase(),
+                image: currentImageData // храним base64
+            });
+
+            saveAndRender();
+            toggleUpload(false);
+            showToast(`SAVED AS PHOTO ${nextID}`);
+            
+            // Reset
+            document.getElementById('new-number').value = '';
+            document.getElementById('new-desc').value = '';
+            document.getElementById('new-photo').value = '';
+            currentImageData = '';
+            document.getElementById('file-label').innerText = "Upload Photo";
+        }
+
+        async function downloadZIP() {
+            showToast("Люблю Лёшу...");
+            
+            const zip = new JSZip();
+            const screenshotsFolder = zip.folder("screenshots");
+            
+            // JSON data (без base64)
+            const jsonData = items.map(item => ({
+                id: item.photoID,
+                file: `screenshots/${item.fileName}`,
+                title: item.number,
+                desc: item.description
+            }));
+            
+            zip.file("vault_data.json", JSON.stringify(jsonData, null, 2));
+            
+            // Добавляем изображения
+            items.forEach(item => {
+                // Извлекаем base64 без префикса
+                const base64Data = item.image.split(',')[1];
+                if (base64Data) {
+                    screenshotsFolder.file(item.fileName, base64Data, { base64: true });
+                }
+            });
+            
+            // Генерируем и скачиваем ZIP
+            const content = await zip.generateAsync({ type: "blob" });
+            saveAs(content, "physim_vault_backup.zip");
+            showToast("ZIP скачан!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function render() {
+            const grid = document.getElementById('grid');
+            const loggedIn = isAdmin();
+            document.getElementById('admin-actions').classList.toggle('hidden', !loggedIn);
+
+            grid.innerHTML = items.map(item => `
+                <div class="bw-card group flex flex-col relative overflow-hidden">
+                    ${loggedIn ? `<button onclick="removeItem(${item.photoID})" class="absolute top-4 right-4 z-10 bg-red-600 text-white px-2 py-1 text-[8px] font-black">Удалить ${item.photoID}</button>` : ''}
+                    <div class="h-64 overflow-hidden bg-zinc-950">
+                        <img src="${item.image}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700">
+                    </div>
+                    <div class="p-10 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                             <h3 class="text-2xl font-black text-white uppercase">${item.number}</h3>
+                             <span class="text-[9px] text-zinc-700 font-mono"></span>
+                        </div>
+                        <p class="text-zinc-500 text-[11px] mb-8 uppercase tracking-widest">${item.description}</p>
+                        <a href="https://t.me/Alexander_Ivanovic" target="_blank" class="w-full border border-zinc-800 text-zinc-400 text-center text-[10px] uppercase font-bold py-4 hover:bg-white hover:text-black">Связаться в Telegram</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function saveAndRender() { 
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); 
+            render(); 
+        }
+        
+        function removeItem(id) { 
+            if(confirm("Delete photo?")) { 
+                items = items.filter(i => i.photoID !== id); 
+                saveAndRender(); 
+                showToast("Удалено");
+            } 
+        }
+
+        render();
+    </script>
+</body>
+</html>
