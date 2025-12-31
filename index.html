@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>physim | Private Assets</title>
+    <title>physim</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- JSZip for Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
         body {
@@ -40,314 +37,158 @@
             letter-spacing: 0.2em;
             font-size: 11px;
             transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            z-index: 5000;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(255,255,255,0.1);
         }
-        .notification.show { transform: translateX(-50%) translateY(0); }
-        .hero-gradient { background: radial-gradient(circle at center, #111 0%, #000 100%); }
-        
-        .modal {
-            backdrop-filter: blur(10px);
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.9);
-            padding: 1.5rem;
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
         }
-
-        .loader {
-            border: 2px solid #333;
-            border-top: 2px solid #fff;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 10px;
+        .hero-gradient {
+            background: radial-gradient(circle at center, #111 0%, #000 100%);
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="min-h-screen">
-    
-    <div id="toast" class="notification">SUCCESS</div>
+    <!-- Notification Toast -->
+    <div id="toast" class="notification">Asset Synchronized</div>
 
-    <!-- Login Modal -->
-    <div id="admin-modal" class="modal">
-        <div class="w-full max-w-md bg-zinc-950 border border-zinc-900 p-10">
-            <h2 class="text-xs tracking-[0.5em] uppercase font-bold text-zinc-500 mb-8">Auth Gateway</h2>
-            <input type="password" id="admin-pass" placeholder="TOKEN" 
-                   class="w-full bg-transparent border-b border-zinc-800 py-4 text-white focus:outline-none focus:border-white transition-colors mb-8 text-sm tracking-widest">
-            <div class="flex gap-4">
-                <button onclick="attemptLogin()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">Verify</button>
-                <button onclick="toggleModal('admin-modal', false)" class="flex-1 border border-zinc-800 text-zinc-500 py-4 text-[10px] font-black uppercase tracking-widest">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Modal -->
-    <div id="upload-modal" class="modal">
-        <div class="w-full max-w-md bg-zinc-950 border border-zinc-900 p-10">
-            <h2 class="text-xs tracking-[0.5em] uppercase font-bold text-zinc-500 mb-8">Add New Asset</h2>
-            <div class="space-y-6">
-                <input type="text" id="new-number" placeholder="NUMBER" class="w-full bg-transparent border-b border-zinc-800 py-3 text-white focus:outline-none text-sm">
-                <input type="text" id="new-desc" placeholder="DESCRIPTION" class="w-full bg-transparent border-b border-zinc-800 py-3 text-white focus:outline-none text-sm">
-                
-                <div class="relative border-2 border-dashed border-zinc-800 p-8 text-center hover:border-zinc-600 transition-colors">
-                    <input type="file" id="new-photo" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewFile()">
-                    <p id="file-label" class="text-[10px] uppercase text-zinc-600 tracking-widest">Drop Photo Here</p>
-                </div>
-
-                <div class="flex gap-4 pt-4">
-                    <button id="save-btn" onclick="addNewAsset()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">
-                        Save Asset
-                    </button>
-                    <button onclick="toggleModal('upload-modal', false)" class="flex-1 border border-zinc-800 text-zinc-500 py-4 text-[10px] font-black uppercase tracking-widest">Back</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Header -->
-    <header class="hero-gradient border-b border-zinc-900 px-6 py-24">
+    <!-- Header / Hero -->
+    <header class="hero-gradient border-b border-zinc-900 px-6 py-24 md:py-32">
         <div class="max-w-7xl mx-auto text-center">
-            <h1 class="text-6xl font-black tracking-tighter uppercase mb-6">physim</h1>
-            <p id="status-tag" class="text-zinc-500 text-[10px] tracking-[0.5em] uppercase font-bold">Anonymous high-tier numbering system</p>
+            <h1 class="text-6xl md:text-8xl font-black tracking-tighter uppercase leading-none mb-6">
+                physim
+            </h1>
+            <div class="h-1 w-12 bg-white mx-auto mb-8"></div>
+            <p class="text-zinc-500 text-[10px] md:text-xs tracking-[0.5em] uppercase font-bold">
+                High-Value Digital Identity & Connectivity
+            </p>
         </div>
     </header>
 
+    <!-- Main Content -->
     <main class="max-w-7xl mx-auto py-24 px-6">
-        <!-- Admin Console -->
-        <div id="admin-actions" class="hidden mb-12 flex flex-col md:flex-row justify-between items-center border-b border-zinc-900 pb-8 gap-4">
-            <div class="text-[10px] text-zinc-400 tracking-widest uppercase font-bold">Admin Connected</div>
-            <div class="flex gap-4">
-                <button onclick="downloadZIP()" class="border border-zinc-700 text-zinc-400 px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
-                    Export Backup
-                </button>
-                <button onclick="toggleModal('upload-modal', true)" class="bg-white text-black px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all">
-                    New Entry
-                </button>
-                <button onclick="logout()" class="border border-red-900 text-red-500 px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-red-950 transition-all">
-                    Logout
-                </button>
-            </div>
-        </div>
-
         <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
             <!-- Items injected here -->
         </div>
     </main>
 
-    <footer class="border-t border-zinc-900 py-12 px-6 flex flex-col items-center gap-6">
-        <p class="text-zinc-600 text-[9px] uppercase tracking-[0.3em]">© physim system v3.1 / Hybrid Storage</p>
-        <button onclick="toggleModal('admin-modal', true)" id="admin-entry-btn" class="text-zinc-900 text-[8px] uppercase tracking-[0.4em] hover:text-zinc-700 transition-all">.</button>
+    <!-- Footer -->
+    <footer class="border-t border-zinc-900 py-12 px-6 text-center">
+        <p class="text-zinc-600 text-[9px] uppercase tracking-[0.3em]">
+            © physim • SECURE ACQUISITION
+        </p>
     </footer>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+<script>
+    const STORAGE_KEY = 'premium_numbers_inventory';
+    // Secure Token Matching Bot Configuration
+    const ADMIN_ID = 'HDFNIPJDhoPJFDHiopjzh4z64hz6j74zf74jhzfg4jxfg74j656564864df4hdfhfgj4f5g4jfGSDFSDFGDFH5444555561488GITLERHG4'; 
 
-        // Secret Token
-        const SECRET_TOKEN = 'HDFNIPJDhoPJFDHiopjzh4z64hz6j74zf74jhzfg4jxfg74j656564864df4hdfhfgj4f5g4jfGSDFSDFGDFH5444555561488GITLERHG4';
+    let items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+        { id: 1, number: '+44 777 000 000', description: 'ULTRA RARE SEQUENTIAL DIGITS. TITANIUM GRADE.', image: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=800' },
+        { id: 2, number: '+44 888 888 888', description: 'LUCKY EIGHTS WORLDWIDE. GLOBAL PRESTIGE.', image: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=800' }
+    ];
+
+    // Функция для обработки изображений с Telegram CDN
+    function processTelegramImageUrl(url) {
+        // Telegram CDN ссылки обычно работают напрямую
+        // Но можем добавить proxy если нужно обойти CORS
+        return url;
         
-        // Storage Logic
-        let useCloud = false;
-        let items = [];
-        let currentImageData = '';
-        let db, auth, appId;
+        // Альтернатива: использовать CORS proxy для обхода ограничений
+        // return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    }
 
-        // Fallback Logic for GitHub Hosting
-        const getFirebaseConfig = () => {
-            if (typeof __firebase_config !== 'undefined') {
-                useCloud = true;
-                return JSON.parse(__firebase_config);
-            }
-            return null; // Local Storage Mode
-        };
+    function checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminId = urlParams.get('admin_id');
+        const addData = urlParams.get('add');
 
-        const config = getFirebaseConfig();
-        
-        if (config && config.apiKey !== "YOUR_API_KEY") {
+        if (adminId === ADMIN_ID && addData) {
             try {
-                const app = initializeApp(config);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'physim-vault';
-                useCloud = true;
-                document.getElementById('status-tag').innerText += " (Cloud)";
+                const decodedData = JSON.parse(atob(addData));
+                
+                if (decodedData.number && decodedData.description) {
+                    const newItem = {
+                        id: Date.now(),
+                        number: decodedData.number,
+                        description: decodedData.description,
+                        // Обрабатываем URL Telegram CDN
+                        image: decodedData.image ? processTelegramImageUrl(decodedData.image) : ''
+                    };
+
+                    // Check if number already exists to avoid duplicates
+                    const exists = items.some(i => i.number === newItem.number);
+                    if (!exists) {
+                        items.unshift(newItem);
+                        saveAndRender();
+                        showToast("Asset Synchronized");
+                        // Clean URL
+                        window.history.replaceState({}, document.title, window.location.pathname + (adminId ? '?admin_id=' + adminId : ''));
+                    }
+                }
             } catch (e) {
-                console.error("Cloud init failed:", e);
-                useCloud = false;
+                console.error("Payload integrity check failed", e);
             }
-        } else {
-            console.log("Using Local Storage Mode");
-            items = JSON.parse(localStorage.getItem('physim_local_vault')) || [];
-            document.getElementById('status-tag').innerText += " (Local)";
         }
+    }
 
-        // Global functions
-        window.toggleModal = (id, show) => { document.getElementById(id).style.display = show ? 'flex' : 'none'; };
-        window.showToast = (msg) => {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        };
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
+    }
 
-        // Auth listeners
-        if (useCloud) {
-            onAuthStateChanged(auth, (user) => {
-                render();
-            });
-            
-            const initAuth = async () => {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            };
-            initAuth();
+    function render() {
+        const grid = document.getElementById('grid');
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAdmin = urlParams.get('admin_id') === ADMIN_ID;
 
-            // Real-time listener
-            const assetsQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'assets'));
-            onSnapshot(assetsQuery, (snapshot) => {
-                items = snapshot.docs.map(doc => doc.data())
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                render();
-            });
-        }
-
-        window.attemptLogin = () => {
-            const pass = document.getElementById('admin-pass').value;
-            if (pass === SECRET_TOKEN) {
-                localStorage.setItem('physim_admin_access', 'true');
-                toggleModal('admin-modal', false);
-                render();
-                showToast("Admin access granted");
-            } else {
-                showToast("Access Denied");
-            }
-        };
-
-        window.logout = () => {
-            localStorage.removeItem('physim_admin_access');
-            render();
-            showToast("Logged out");
-        };
-
-        const isAdmin = () => localStorage.getItem('physim_admin_access') === 'true';
-
-        window.previewFile = () => {
-            const file = document.getElementById('new-photo').files[0];
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                currentImageData = reader.result;
-                document.getElementById('file-label').innerText = "IMAGE READY";
-            }
-            if (file) reader.readAsDataURL(file);
-        };
-
-        window.addNewAsset = async () => {
-            const num = document.getElementById('new-number').value;
-            const desc = document.getElementById('new-desc').value;
-            if (!num || !currentImageData) return showToast("MISSING FIELDS");
-
-            const saveBtn = document.getElementById('save-btn');
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = `<span class="loader"></span> Saving...`;
-
-            const assetData = {
-                id: Date.now().toString(),
-                number: num,
-                description: desc.toUpperCase(),
-                image: currentImageData, 
-                createdAt: new Date().toISOString()
-            };
-
-            if (useCloud) {
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'assets', assetData.id);
-                    await setDoc(docRef, assetData);
-                    showToast("Synced to Cloud");
-                } catch (err) {
-                    showToast("Cloud Sync Error");
-                }
-            } else {
-                items.unshift(assetData);
-                localStorage.setItem('physim_local_vault', JSON.stringify(items));
-                showToast("Saved Locally");
-                render();
-            }
-
-            saveBtn.disabled = false;
-            saveBtn.innerText = "Save Asset";
-            toggleModal('upload-modal', false);
-            // Clear form
-            document.getElementById('new-number').value = '';
-            document.getElementById('new-desc').value = '';
-            document.getElementById('file-label').innerText = "Drop Photo Here";
-            currentImageData = '';
-        };
-
-        window.removeItem = async (id) => {
-            if (!confirm("Delete permanently?")) return;
-            if (useCloud) {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'assets', id));
-            } else {
-                items = items.filter(i => i.id !== id);
-                localStorage.setItem('physim_local_vault', JSON.stringify(items));
-                render();
-            }
-            showToast("Asset Removed");
-        };
-
-        window.downloadZIP = async () => {
-            showToast("Generating Backup...");
-            const zip = new JSZip();
-            const screenshotsFolder = zip.folder("images");
-            zip.file("database.json", JSON.stringify(items.map(i => ({...i, image: 'see-folder'})), null, 2));
-            items.forEach(item => {
-                if (item.image && item.image.includes(',')) {
-                    screenshotsFolder.file(`${item.id}.jpg`, item.image.split(',')[1], { base64: true });
-                }
-            });
-            const content = await zip.generateAsync({ type: "blob" });
-            saveAs(content, "physim_backup.zip");
-            showToast("Backup Complete");
-        };
-
-        function render() {
-            const grid = document.getElementById('grid');
-            const adminMode = isAdmin();
-            document.getElementById('admin-actions').classList.toggle('hidden', !adminMode);
-
-            if (items.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-zinc-800 text-[10px] uppercase tracking-widest font-bold">No assets found</div>`;
-            } else {
-                grid.innerHTML = items.map(item => `
-                    <div class="bw-card group flex flex-col relative overflow-hidden">
-                        ${adminMode ? `<button onclick="removeItem('${item.id}')" class="absolute top-4 right-4 z-10 bg-red-600 text-white px-3 py-1 text-[8px] font-black uppercase hover:bg-red-500 transition-colors">Delete</button>` : ''}
-                        <div class="h-72 overflow-hidden bg-zinc-950">
-                            <img src="${item.image}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 scale-105 group-hover:scale-100">
-                        </div>
-                        <div class="p-10 flex flex-col flex-grow">
-                             <h3 class="text-2xl font-black text-white uppercase mb-2">${item.number}</h3>
-                            <p class="text-zinc-500 text-[11px] mb-10 uppercase tracking-[0.2em] leading-relaxed">${item.description || 'NO DESCRIPTION'}</p>
-                            <a href="https://t.me/Alexander_Ivanovic" target="_blank" class="w-full border border-zinc-800 text-zinc-400 text-center text-[10px] uppercase font-black py-4 hover:bg-white hover:text-black transition-all">
-                                Purchase / Telegram
-                            </a>
-                        </div>
+        grid.innerHTML = items.map(item => `
+            <div class="bw-card group flex flex-col relative overflow-hidden">
+                ${isAdmin ? `
+                <button onclick="removeItem(${item.id})" class="absolute top-4 right-4 z-10 bg-white text-black px-3 py-1.5 text-[9px] font-black uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-500 hover:text-white">
+                    Remove
+                </button>
+                ` : ''}
+                <div class="h-64 overflow-hidden bg-zinc-950">
+                    <img src="${item.image}" alt="Number Card" 
+                         class="w-full h-full object-cover opacity-60 grayscale group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" 
+                         onerror="this.src='https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=800'"
+                         loading="lazy">
+                </div>
+                <div class="p-10 flex flex-col flex-grow">
+                    <div class="mb-4">
+                        <span class="text-[9px] text-zinc-600 font-bold tracking-[0.3em] uppercase">Premium Listing</span>
+                        <h3 class="text-2xl font-black mt-1 tracking-tight text-white uppercase leading-none">${item.number}</h3>
                     </div>
-                `).join('');
-            }
-        }
-        
-        render(); // Initial render for local mode
-    </script>
+                    <p class="text-zinc-500 text-[11px] mb-10 flex-grow leading-relaxed uppercase tracking-widest font-medium">
+                        ${item.description}
+                    </p>
+                    <a href="https://t.me/Alexander_Ivanovic" 
+                       target="_blank"
+                       class="w-full bg-transparent border border-zinc-800 text-zinc-400 text-center text-[10px] uppercase tracking-[0.2em] font-bold py-5 hover:bg-white hover:text-black hover:border-white transition-all duration-500">
+                        Secure Asset
+                    </a>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function saveAndRender() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        render();
+    }
+
+    function removeItem(id) {
+        items = items.filter(i => i.id !== id);
+        saveAndRender();
+    }
+
+    checkUrlParams();
+    render();
+</script>
+
 </body>
 </html>
