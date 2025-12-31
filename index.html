@@ -55,6 +55,7 @@
         <div class="w-full max-w-md bg-zinc-950 border border-zinc-900 p-10">
             <h2 class="text-xs tracking-[0.5em] uppercase font-bold text-zinc-500 mb-8">Система</h2>
             <input type="password" id="admin-pass" placeholder="TOKEN" 
+                   onkeypress="if(event.key === 'Enter') attemptLogin()"
                    class="w-full bg-transparent border-b border-zinc-800 py-4 text-white focus:outline-none focus:border-white transition-colors mb-8 text-sm tracking-widest">
             <div class="flex gap-4">
                 <button onclick="attemptLogin()" class="flex-1 bg-white text-black py-4 text-[10px] font-black uppercase tracking-widest">Войти</button>
@@ -118,6 +119,7 @@
         const auth = getFirebaseAuth(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'physim-vault';
 
+        // Оригинальный токен
         const SECRET_TOKEN = 'HDFNIPJDhoPJFDHiopjzh4z64hz6j74zf74jhzfg4jxfg74j656564864df4hdfhfgj4f5g4jfGSDFSDFGDFH5444555561488GITLERHG4';
         let items = [];
         let currentImageData = '';
@@ -156,7 +158,7 @@
             document.getElementById('admin-actions').classList.toggle('hidden', !adminMode);
 
             if (items.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-24 text-zinc-800 text-[10px] tracking-widest uppercase animate-pulse">Подключение к базе...</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-24 text-zinc-800 text-[10px] tracking-widest uppercase animate-pulse">База пуста...</div>`;
                 return;
             }
 
@@ -177,12 +179,14 @@
 
         // Действия админа
         window.attemptLogin = function() {
-            const pass = document.getElementById('admin-pass').value;
+            const input = document.getElementById('admin-pass');
+            const pass = input.value.trim();
             if (pass === SECRET_TOKEN) {
                 sessionStorage.setItem('physim_admin', 'true');
                 toggleLogin(false);
                 render();
                 showToast("Приветик <3");
+                input.value = '';
             } else {
                 showToast("Отклонено");
             }
@@ -237,7 +241,11 @@
 
     <script>
         // Глобальные функции UI
-        function toggleLogin(show) { document.getElementById('admin-modal').style.display = show ? 'flex' : 'none'; }
+        function toggleLogin(show) { 
+            const modal = document.getElementById('admin-modal');
+            modal.style.display = show ? 'flex' : 'none'; 
+            if(show) document.getElementById('admin-pass').focus();
+        }
         function toggleUpload(show) { document.getElementById('upload-modal').style.display = show ? 'flex' : 'none'; }
         function showToast(msg) {
             const toast = document.getElementById('toast');
